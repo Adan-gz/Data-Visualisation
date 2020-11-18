@@ -1,0 +1,383 @@
+---
+title: "VOTO A VOX: PREELECTORAL OCTUBRE"
+output: 
+  html_document:
+    toc: yes
+    theme: sandstone
+    highlight: tango
+---
+
+<style>
+body {
+text-align: justify}
+</style>
+
+```{r}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+```
+
+En este documento añadiré tres ejemplos de visualización que he realizado. No me extenderé ni en razonamientos teóricos ni en análisis de lo visualizado, dado que no es el objetivo. 
+
+### 1. Ubicación en la escala izquierda-derecha: PSC y PSOE
+
+Recientemente, compartí un hilo de [Twitter](https://twitter.com/RomenAdan/status/1328653428143296517?s=20) en el cual me preguntaba si, pese a ser mismo partido, existían diferencias entre cómo se percibía ideológicamente al PSC en Cataluña y al PSOE en España. Usando el CEO julio 2020 y el CIS enero 2020, comparo el posicionamiento de ambos partidos en la escala izquierda-derecha en relación a la autoubicación ideológica. 
+
+Si bien las comparaciones han de hacerse con cautela, dada las diferentes escalas, nos muestran cómo mientras el PSC es percibido transversalmente como un partido de centro moderado, el PSOE avanza del centro izquierda hacia posturas más izquierdistas a medida que los ciudadanos se ubican en posturas más de derechas. Se añade el intervalo de confianza de la media muestral al 95% de confianza. 
+
+
+```{r fig.width= 12 , fig.height= 5 }
+library(dplyr)
+df <- haven::read_spss("D:/MASTER_ANALISIS_POLITICO/APUNTES/Elecciones y votantes en España/Probaturas/Microdades anonimitzades -974.sav") 
+ideopsc <- df$P29C
+ideopsc[ideopsc == 98 | ideopsc == 99] <- NA
+ideo <- df$P28
+ideo[ideo == 98 | ideo == 99] <- NA
+library(ggthemes)
+library(ggplot2)
+p4<- data.frame(ideo,ideopsc) %>%
+  filter(!is.na(ideo), !is.na(ideopsc))%>%
+  mutate(ideo_factor = factor(ideo, levels = c("0","1","2","3","4","5","6","7","8","9","10"),
+                              labels = c("Ext Izq","Ext Izq","Izq","Izq","Centro Izq","Centro","Centro Der","Der","Der","Ext Der","Ext Der"))) %>%
+  group_by(ideo_factor) %>%
+  summarise(mean_psc = mean(ideopsc),
+            n = n(),
+            lower =  mean(ideopsc)-1.96*(sd(ideopsc)/sqrt(n-1)),
+            upper =  mean(ideopsc)+1.96*(sd(ideopsc)/sqrt(n-1)),
+            id = rep(1,10)) %>%
+  ggplot(aes(ideo_factor, mean_psc, group = id))+
+  geom_point(shape = 19, size = 2, alpha = 0.5, col = "darkblue")+
+  geom_line(linetype = 2, size = 0.7, col = "blue")+
+  geom_errorbar(aes(ymin = lower,ymax = upper),
+                linetype = 1)+
+  ggthemes::theme_economist()+
+  scale_y_continuous(breaks = seq(0,10,0.5))+
+  labs(x = "Autoubicación ideológica del ciudadano", y = "Ubicación del PSC",
+       title = "Escala izquierda-derecha: PSC.",
+       caption = "@RomenAdan | Fuente: CEO 07/2020")+
+  theme(axis.title.y = element_text(size = 13, face = "bold" , vjust = 3),
+        axis.title.x = element_text(size = 13, face = "bold" , vjust = -1),
+        plot.caption = element_text(vjust = -5, hjust = 1, size = 9))
+cis <- haven::read_spss("D:/MASTER_ANALISIS_POLITICO/APUNTES/Elecciones y votantes en España/Probaturas/cisene2020.sav")
+ideo_cis <- cis$ESCIDEOL
+ideo_psoe_cis <- cis$ESCIDEOLPAR_1
+ideo_cis[ideo_cis == 98 | ideo_cis == 99] <- NA
+ideo_psoe_cis[ideo_psoe_cis == 98 | ideo_psoe_cis == 99] <- NA
+cis4 <- data.frame(ideo_cis,ideo_psoe_cis) %>%
+  filter(!is.na(ideo_cis), !is.na(ideo_psoe_cis)) %>%
+  mutate(ideo_factor = factor(ideo_cis, levels = c("1","2","3","4","5","6","7","8","9","10"),
+                              labels = c("Ext Izq","Ext Izq","Izq","Centro Izq","Centro","Centro Der","Der","Der","Ext Der","Ext Der"))) %>%
+  group_by(ideo_factor) %>%
+  summarise(mean_psoe = mean(ideo_psoe_cis),
+            n = n(),
+            lower =  mean(ideo_psoe_cis)-1.96*(sd(ideo_psoe_cis)/sqrt(n-1)),
+            upper =  mean(ideo_psoe_cis)+1.96*(sd(ideo_psoe_cis)/sqrt(n-1)),
+            id = rep(1,10)) %>%
+  ggplot(aes(ideo_factor, mean_psoe, group = id))+
+  geom_point(shape = 19, size = 2, alpha = 0.5, col = "darkblue")+
+  geom_line(linetype = 2, size = 0.7, col = "blue")+
+  geom_errorbar(aes(ymin = lower,ymax = upper),
+                linetype = 1)+
+  ggthemes::theme_fivethirtyeight()+
+  scale_y_continuous(breaks = seq(0,10,0.5))+
+  labs(x = "Autoubicación ideológica del ciudadano", y = "Ubicación del PSOE",
+       title = "Escala izquierda-derecha: PSOE",
+       caption = "@RomenAdan | Fuente: CIS 01/2020")+
+  theme(axis.title.y = element_text(size = 13, face = "bold" , vjust = 3),
+        axis.title.x = element_text(size = 13, face = "bold" , vjust = -1),
+        plot.caption = element_text(vjust = -2, hjust = 1, size = 9),
+        title = element_text(size = 11))
+gridExtra::grid.arrange(p4,cis4, ncol = 2)
+
+
+```
+
+Sobre la agrupación de las escalas: 
+CIS: '1-2' Ext Izq, '3' Izq, '4' Centro Izq, '5' Centro, '6' Centro Der, '7' Der, '8-9-10' Ext Der.
+CEO: '0-1' Ext Izq, '2-3' Izq, '4' Centro Izq, '5' Centro, '6' Centro Der, '7-8' Der, '9-10' Ext Der. Aunque comparto también los gráficos en las escalas originales:
+
+```{r fig.width= 12 , fig.height= 5 }
+p2<-data.frame(ideo,ideopsc) %>%
+  filter(!is.na(ideo), !is.na(ideopsc))%>%
+  mutate(ideo_factor = as.factor(ideo)) %>%
+  group_by(ideo_factor) %>%
+  summarise(mean_psc = mean(ideopsc),
+            n = n(),
+            lower =  mean(ideopsc)-1.96*(sd(ideopsc)/sqrt(n-1)),
+            upper =  mean(ideopsc)+1.96*(sd(ideopsc)/sqrt(n-1)),
+            id = rep(1,10)) %>%
+  ggplot(aes(ideo_factor, mean_psc, group = id))+
+  geom_point()+
+  geom_line(linetype = 2, size = 0.5, col = "blue")+
+  geom_errorbar(aes(ymin = lower,ymax = upper),
+                linetype = 1)+
+  ggthemes::theme_economist()+
+  scale_y_continuous(breaks = seq(0,10,0.5))+
+  labs(x = "Autoubicación ideológica del ciudadano", y = "Ubicación del PSC",
+       title = "Escala izquierda-derecha: PSC",
+       caption = "@RomenAdan | Fuente: CEO 07/2020")+
+  theme(axis.title.y = element_text(size = 13, face = "bold" , vjust = 3),
+        axis.title.x = element_text(size = 13, face = "bold" , vjust = -1),
+        plot.caption = element_text(vjust = -5, hjust = 1, size = 9))
+cis2 <- data.frame(ideo_cis,ideo_psoe_cis) %>%
+  filter(!is.na(ideo_cis), !is.na(ideo_psoe_cis)) %>%
+  mutate(ideo_factor = as.factor(ideo_cis)) %>%
+  group_by(ideo_factor) %>%
+  summarise(mean_psoe = mean(ideo_psoe_cis),
+            n = n(),
+            lower =  mean(ideo_psoe_cis)-1.96*(sd(ideo_psoe_cis)/sqrt(n-1)),
+            upper =  mean(ideo_psoe_cis)+1.96*(sd(ideo_psoe_cis)/sqrt(n-1)),
+            id = rep(1,10)) %>%
+  ggplot(aes(ideo_factor, mean_psoe, group = id))+
+  geom_point(shape = 19, size = 2, alpha = 0.5, col = "darkblue")+
+  geom_line(linetype = 2, size = 0.7, col = "blue")+
+  geom_errorbar(aes(ymin = lower,ymax = upper),
+                linetype = 1)+
+  ggthemes::theme_fivethirtyeight()+
+  scale_y_continuous(breaks = seq(0,10,0.5))+
+  labs(x = "Autoubicación ideológica del ciudadano", y = "Ubicación del PSOE",
+       title = "Escala izquierda-derecha: PSOE",
+       caption = "@RomenAdan | Fuente: CIS 01/2020")+
+  theme(axis.title.y = element_text(size = 13, face = "bold" , vjust = 3),
+        axis.title.x = element_text(size = 13, face = "bold" , vjust = -1),
+        plot.caption = element_text(vjust = -2, hjust = 1, size = 9),
+        title = element_text(size = 11))
+gridExtra::grid.arrange(p2,cis2, ncol = 2)
+
+```
+
+
+
+Dado que los ejes ideológicos y nacionales están altamente correlacionados en una relación no-ortogonal, para el caso del PSC incluía también su ubicación en función del recuerdo de voto. Se aprecian diferencias significativas entre independentistas y partidos no independentistas.
+
+
+```{r fig.width= 12 , fig.height= 5 }
+voto <- data.frame(df$P39B, ideopsc) %>%
+  mutate(voto = ifelse(df$P39B == 20 |#pdcat
+                         df$P39B == 21 |#jxcat  
+                         df$P39B == 3 | #erc
+                         df$P39B == 10, "Independentistas", df$P39B),
+         voto = ifelse(voto == 1 |#pp
+                         voto == 6 , "PP-Cs",voto),
+         voto = ifelse(voto == 5 | #icv
+                         voto == 12 |#podemos  
+                         voto == 13 | #barcelona en comu
+                         
+                         voto == 18, #cata en comu podem
+                       "Podemos", voto),
+         voto = ifelse(voto == 4,"PSC",voto),
+         voto = ifelse(voto == "Independentistas" | 
+                         voto == "PP-Cs" |
+                         voto == "Podemos" |
+                         voto == "PSC", voto , "Otro"))
+voto1 <-voto %>%
+  filter(!is.na(voto), !is.na(ideopsc),
+         voto != "Otro") %>%
+  mutate(voto_factor = factor(voto,levels = c("Independentistas","Podemos","PSC","PP-Cs"),
+                              labels = c("Independentistas","Podemos","PSC","PP-Cs"))) %>%
+  group_by(voto_factor) %>%
+  summarise(mean_psc = mean(ideopsc),
+            n = n(),
+            lower =  mean(ideopsc)-1.96*(sd(ideopsc)/sqrt(n-1)),
+            upper =  mean(ideopsc)+1.96*(sd(ideopsc)/sqrt(n-1)),
+            id = rep(1,10)) %>%
+  ggplot(aes(voto_factor, mean_psc, group = id))+
+  geom_point(shape = 19, size = 2, alpha = 0.5, col = "darkblue")+
+  geom_line(linetype = 2, size = 0.7, col = "blue")+
+  geom_errorbar(aes(ymin = lower,ymax = upper),
+                linetype = 1)+
+  ggthemes::theme_economist()+
+  scale_y_continuous(breaks = seq(0,10,0.5))+
+  labs(x = "Recuerdo de voto Autonómicas 2017", y = "Ubicación del PSC",
+       title = "Escala izquierda-derecha: PSC",
+       caption = "@RomenAdan | Fuente: CIS 01/2020")+
+  theme(axis.title.y = element_text(size = 13, face = "bold" , vjust = 3),
+        axis.title.x = element_text(size = 13, face = "bold" , vjust = -1),
+        plot.caption = element_text(vjust = -2, hjust = 1, size = 9),
+        title = element_text(size = 10))
+
+voto2 <- data.frame(df$P39B, ideopsc) %>%
+  mutate(voto = ifelse(df$P39B == 20 |#pdcat
+                         df$P39B == 21 ,#jxcat  
+                         "JxCat",df$P39B),
+         voto = ifelse(voto == 3, "ERC", voto),
+         voto = ifelse(voto == 10, "CUP", voto),
+         voto = ifelse(voto == 1 , "PP", voto),#pp
+         voto = ifelse(voto == 6 , "Cs", voto),
+         voto = ifelse(voto == 5 | #icv
+                         voto == 12 |#podemos  
+                         voto == 13 | #barcelona en comu
+                         voto == 18, #cata en comu podem
+                       "Podemos", voto),
+         voto = ifelse(voto == 4,"PSC",voto),
+         voto = ifelse(voto == "JxCat" | 
+                         voto == "ERC" |
+                       voto == "CUP" |
+                         voto == "PP" |
+                         voto == "Cs" |
+                         voto == "Podemos" |
+                         voto == "PSC", voto , "Otro"))  
+
+voto2_p <-voto2 %>%
+  filter(!is.na(voto), !is.na(ideopsc),
+         voto != "Otro") %>%
+  mutate(voto_factor = factor(voto,levels = c("JxCat","ERC","CUP","Podemos","PSC","Cs","PP"),
+                              labels = c("JxCat","ERC","CUP","Podemos","PSC","Cs","PP"))) %>%
+  group_by(voto_factor) %>%
+  summarise(mean_psc = mean(ideopsc),
+            n = n(),
+            lower =  mean(ideopsc)-1.96*(sd(ideopsc)/sqrt(n-1)),
+            upper =  mean(ideopsc)+1.96*(sd(ideopsc)/sqrt(n-1)),
+            id = rep(1,10)) %>%
+  ggplot(aes(voto_factor, mean_psc, group = id))+
+  geom_point(shape = 19, size = 2, alpha = 0.5, col = "darkblue")+
+  geom_line(linetype = 2, size = 0.7, col = "blue")+
+  geom_errorbar(aes(ymin = lower,ymax = upper),
+                linetype = 1)+
+  ggthemes::theme_fivethirtyeight()+
+  scale_y_continuous(breaks = seq(0,10,0.5))+
+  labs(x = "Recuerdo de voto Autonómicas 2017", y = "Ubicación del PSC",
+       title = "Escala izquierda-derecha: PSC",
+       caption = "@RomenAdan | Fuente: CIS 01/2020")+
+  theme(axis.title.y = element_text(size = 13, face = "bold" , vjust = 3),
+        axis.title.x = element_text(size = 13, face = "bold" , vjust = -1),
+        plot.caption = element_text(vjust = -2, hjust = 1, size = 9),
+        title = element_text(size = 10))
+gridExtra::grid.arrange(voto1, voto2_p, ncol = 2)
+
+```
+
+
+### 2. Mapa: Tasas de desempleo en los jóvenes (20-24 años)
+
+Ante la inminencia de una segunda crisis económica, ¿de qué situación parten los jóvenes en diferentes Comunidades Autónomas? Mapeo a nivel territorial la tasa de desempleo de jóvenes 20-24 años, donde se muestra patrones territoriales, así como las regiones donde las políticas para apoyar a este heterogéneo colectivo serán determinantes. 
+
+```{r}
+library(readxl)
+ccaa <- read_xlsx("D:/Cosas con R/Mapa/4247.xlsx")
+ccaa <- ccaa[c(-(1:8),-(28:35)),] 
+colnames(ccaa) <- c("ccaa","parojoven")
+ccaa <- ccaa %>%
+  mutate(ccaa = as.factor(ccaa),
+         parojoven = as.numeric(parojoven))
+library(sf)
+map <- readRDS("D:/Cosas con R/Mapa/gadm36_ESP_1_sf.rds")
+ccaa2 <- ccaa
+ccaa2$ccaa <- factor(ccaa2$ccaa, levels = c("01 Andalucía","02 Aragón","03 Asturias, Principado de","04 Balears, Illes" ,"05 Canarias","06 Cantabria",
+                                                  "07 Castilla y León","08 Castilla - La Mancha", "09 Cataluña","10 Comunitat Valenciana","11 Extremadura",
+                                                  "12 Galicia","13 Madrid, Comunidad de","14 Murcia, Región de","15 Navarra, Comunidad Foral de", "16 País Vasco","17 Rioja, La","18 Ceuta","19 Melilla"),
+                        
+                        labels = c("Andalucía","Aragón","Asturias","Baleares","Canarias","Cantabria","Castilla y León", "Castilla-La Mancha", "Cataluña", "Comunidad Valenciana" ,
+                                   "Extremadura", "Galicia",  "Madrid", "Murcia", "Navarra","País Vasco","La Rioja","Ceuta", "Melilla"))
+ccaa2<-ccaa2 %>%
+  mutate(mean_paro = mean(parojoven),
+         sobre_media = ifelse(parojoven > mean_paro, 1,0))
+
+CM <- data.frame(ccaa = "Ceuta y Melilla", parojoven = (ccaa2[ccaa2$ccaa == "Ceuta", "parojoven"] + ccaa2[ccaa2$ccaa == "Melilla", "parojoven"] )/ 2,
+                 mean_paro = mean(ccaa2$parojoven), sobre_media = 1)
+
+ccaa2 <- data.frame(rbind(ccaa2[1:17,],CM))
+
+ccaa2$parojoven <-round(ccaa2$parojoven,1)
+
+
+map <- rename(map, ccaa = NAME_1)
+map$ccaa <- recode(map$ccaa,
+                   "Comunidad de Madrid" = "Madrid",
+                   "Comunidad Foral de Navarra" = "Navarra" ,
+                   "Principado de Asturias" = "Asturias",
+                   "Islas Canarias" = "Canarias",
+                   "Región de Murcia" = "Murcia",
+                   "Islas Baleares" = "Baleares")
+
+data <- left_join(map,ccaa2, by = "ccaa")
+
+library(viridis)
+ggplot(data)+
+  geom_sf(aes(fill = parojoven))+theme_bw()+
+  scale_fill_gradient(low = "lightgray",high = "royalblue4")+
+  geom_sf_label(data = data %>% 
+                  filter(ccaa != "Canarias", ccaa !="Ceuta y Melilla",
+                         ccaa !="País Vasco",
+                         parojoven > mean_paro),
+                aes(label = parojoven), size = 2.6, alpha = 0.7,
+                label.padding = unit(0.2, "lines"),
+                color = "darkred")+
+  geom_sf_label(data = data %>% 
+                  filter(ccaa == "Ceuta y Melilla",
+                         parojoven > mean_paro),
+                aes(label = parojoven), size = 2.8, alpha = 0.7,
+                label.padding = unit(0.2, "lines"),
+                color = "darkred", nudge_y = -0.4, nudge_x = 1)+
+  geom_sf_label(data = data %>% 
+                  filter(ccaa == "Canarias",
+                         parojoven > mean_paro),
+                aes(label = parojoven), size = 2.8, alpha = 0.7,
+                label.padding = unit(0.2, "lines"),
+                color = "darkred", nudge_y = 0.8)+
+  geom_sf_label(data = data %>% 
+                  filter(ccaa == "País Vasco",
+                         parojoven > mean_paro),
+                aes(label = parojoven), size = 2.8, alpha = 0.7,
+                label.padding = unit(0.2, "lines"),
+                color = "darkred", nudge_y = 0.7)+
+  
+  geom_label(aes(x = -14, y = 35, label = "Media de España: 39.7"),
+             col = "gray10", size = 2.7, alpha = 0.4,color = "gray70",
+             label.padding = unit(0.2, "lines"))+
+  labs(title = "Desempleo entre los 20-24 años, 3er trimestre 2020",
+       x = "",y="", fill = "% Desempleo",
+       caption = "@RomenAdan | Fuente: Datos del INE")+
+  theme(legend.position = c(0.2,0.75),
+        plot.caption = element_text(size = 8, vjust = 8))
+
+```
+
+
+### 3. La confianza en el sistema legal
+
+La confianza institucional se ha visto dañada en los últimos tiempos. En este gráfico, haciendo uso de la _European Social Survey_, se muestra la desconfianza de los ciudadanos españoles hacia su justicia.
+
+```{r}
+ESS <- haven::read_spss("D:/MASTER_ANALISIS_POLITICO/APUNTES/El Estudio de la Opinion Publica/Trabajo_grupal/Trabajo_OP/Ess9e02.sav")
+
+meang <- weighted.mean(ESS$trstlgl, w = ESS$anweight ,na.rm = TRUE)
+spain <- ESS %>%filter(cntry == "ES")
+meanspain <-  weighted.mean(spain$trstlgl, w = spain$anweight ,na.rm = TRUE)
+ESS %>%
+  group_by(cntry)%>%
+  summarise(media_legal = weighted.mean(trstlgl, anweight ,na.rm = TRUE))%>%
+  ggplot(aes(reorder(cntry,media_legal), media_legal))+
+  geom_point(size = 3, alpha = 0.5)+theme_bw()+
+  ylim(0,10)+
+  scale_y_continuous(breaks = seq(0,10,1))+
+  geom_hline(yintercept = meanspain, size = 1, linetype = "dashed",
+             col = "darkred",alpha = 0.7)+
+  geom_label(aes(x = "CZ", y = 4.3, label = "Media de España"), 
+             col = "darkred", show.legend = FALSE)+
+  geom_hline(yintercept = meang, size = 1, linetype = "dashed", alpha = 0.7)+
+  geom_label(aes(x = "SI", y = 5.75, label = "Media general"),
+                 col = "gray30", show.legend = F)+
+  geom_hline(yintercept = 5, size = 0.8,alpha = 0.1)+
+  labs(x = "", y = "",
+       title = "Confianza en el sistema legal en Europa",
+       caption = "@RomenAdan | Fuente: Elaboración propia a partir de ESS 9")
+  theme(axis.title.y = element_text(vjust = 2))
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
